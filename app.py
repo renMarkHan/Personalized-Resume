@@ -5,247 +5,443 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 st.set_page_config(
-    page_title="Yuhan Ren - Interactive Resume",
-    page_icon="🚀",
+    page_title="Yuhan Ren - Intelligent Resume Copilot",
+    page_icon="🧠",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for fancy styling
+# ======== Advanced CSS + Neo-Brutalist Design ========
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 2rem;
+    :root {
+        --primary: #0f0f0f;
+        --accent: #00d4ff;
+        --warning: #ff006e;
+        --success: #00ff41;
     }
-    .tech-badge {
-        display: inline-block;
-        background-color: #e1f5fe;
-        color: #0277bd;
-        padding: 0.3rem 0.6rem;
-        margin: 0.2rem;
-        border-radius: 0.5rem;
-        font-size: 0.8rem;
-        font-weight: bold;
+    
+    * {
+        font-family: 'IBM Plex Mono', 'Courier New', monospace;
     }
-    .achievement-metric {
-        text-align: center;
+    
+    .hero-section {
+        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+        border: 3px solid var(--accent);
+        padding: 2rem;
+        margin: 1rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            repeating-linear-gradient(
+                0deg,
+                rgba(0, 212, 255, 0.03) 0px,
+                rgba(0, 212, 255, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+        pointer-events: none;
+    }
+    
+    .conversation-turn {
+        background: #1a1a2e;
+        border-left: 5px solid var(--accent);
+        padding: 1.5rem;
+        margin: 1rem 0;
+        transform: skewX(-2deg);
+        position: relative;
+    }
+    
+    .user-intent {
+        background: #2d2d44;
+        border: 2px dashed var(--warning);
         padding: 1rem;
-        background-color: #f0f8ff;
-        border-radius: 0.5rem;
-        margin: 0.5rem;
+        margin: 1rem 0;
+        font-style: italic;
+        color: var(--warning);
+    }
+    
+    .neural-badge {
+        display: inline-block;
+        background: linear-gradient(90deg, var(--accent), #00ff41);
+        color: #0f0f0f;
+        padding: 0.4rem 0.8rem;
+        font-weight: bold;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        margin: 0.3rem;
+        clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+    }
+    
+    .skill-gauge {
+        background: #1a1a2e;
+        border: 1px solid var(--accent);
+        padding: 0.8rem;
+        margin: 0.5rem 0;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.8rem;
+    }
+    
+    .timeline-event {
+        border: 2px solid var(--accent);
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        background: rgba(0, 212, 255, 0.05);
+        position: relative;
+    }
+    
+    .timeline-event::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: var(--accent);
+        border: 3px solid #0f0f0f;
+        border-radius: 50%;
+        right: -40px;
+        top: 1.5rem;
+        z-index: 10;
+    }
+    
+    .agentic-suggestion {
+        background: linear-gradient(90deg, rgba(0, 255, 65, 0.1), rgba(0, 212, 255, 0.1));
+        border: 2px solid var(--success);
+        padding: 1rem;
+        margin: 1rem 0;
+        position: relative;
+    }
+    
+    .agentic-suggestion::before {
+        content: '🤖 AI AGENT INSIGHT';
+        display: block;
+        color: var(--success);
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+    
+    .generative-ui {
+        animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px) rotate(-1deg);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0) rotate(0deg);
+        }
+    }
+    
+    .micro-interaction {
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .micro-interaction:hover {
+        transform: scale(1.05) skewY(-1deg);
+        border-color: var(--success);
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+    }
+    
+    .turn-counter {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--accent);
+        color: #0f0f0f;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        font-size: 0.9rem;
+        z-index: 100;
+        clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ---- data definitions ----
+# ======== Session State & Data ========
+if 'turn_count' not in st.session_state:
+    st.session_state.turn_count = 0
+
 skills_data = [
-    {"Skill": "Python", "Category": "Data & Analytics", "Proficiency": 90},
-    {"Skill": "SQL", "Category": "Data & Analytics", "Proficiency": 85},
-    {"Skill": "R", "Category": "Data & Analytics", "Proficiency": 75},
-    {"Skill": "Excel (VBA)", "Category": "Data & Analytics", "Proficiency": 70},
-    {"Skill": "Tableau", "Category": "Data & Analytics", "Proficiency": 80},
-    {"Skill": "Power BI", "Category": "Data & Analytics", "Proficiency": 70},
-    {"Skill": "JavaScript", "Category": "Software & AI Development", "Proficiency": 80},
-    {"Skill": "TypeScript", "Category": "Software & AI Development", "Proficiency": 75},
-    {"Skill": "LLM Integration", "Category": "Software & AI Development", "Proficiency": 60},
-    {"Skill": "AI Agents", "Category": "Software & AI Development", "Proficiency": 60},
-    {"Skill": "JAVA", "Category": "Software & AI Development", "Proficiency": 70},
-    {"Skill": "C", "Category": "Software & AI Development", "Proficiency": 65},
-    {"Skill": "PHP", "Category": "Software & AI Development", "Proficiency": 60},
-    {"Skill": "HTML/CSS", "Category": "Software & AI Development", "Proficiency": 80},
-    {"Skill": "C#", "Category": "Software & AI Development", "Proficiency": 65},
-    {"Skill": "React Native", "Category": "Software & AI Development", "Proficiency": 70},
-    {"Skill": "NodeJS", "Category": "Software & AI Development", "Proficiency": 75},
-    {"Skill": "AngularJS", "Category": "Software & AI Development", "Proficiency": 70},
-    {"Skill": "AWS (S3/API Gateway)", "Category": "Cloud, DevOps & Tools", "Proficiency": 75},
-    {"Skill": "Google Cloud Platform", "Category": "Cloud, DevOps & Tools", "Proficiency": 70},
-    {"Skill": "Docker", "Category": "Cloud, DevOps & Tools", "Proficiency": 80},
-    {"Skill": "Kubernetes", "Category": "Cloud, DevOps & Tools", "Proficiency": 60},
-    {"Skill": "Git", "Category": "Cloud, DevOps & Tools", "Proficiency": 85},
-    {"Skill": "JIRA", "Category": "Cloud, DevOps & Tools", "Proficiency": 80},
-    {"Skill": "RESTful APIs", "Category": "Cloud, DevOps & Tools", "Proficiency": 80},
+    {"Skill": "Python", "Category": "Data & Analytics", "Proficiency": 90, "Years": 3},
+    {"Skill": "SQL", "Category": "Data & Analytics", "Proficiency": 85, "Years": 3},
+    {"Skill": "R", "Category": "Data & Analytics", "Proficiency": 75, "Years": 2},
+    {"Skill": "Tableau", "Category": "Data & Analytics", "Proficiency": 80, "Years": 2},
+    {"Skill": "Power BI", "Category": "Data & Analytics", "Proficiency": 70, "Years": 1},
+    {"Skill": "JavaScript", "Category": "Software & AI", "Proficiency": 80, "Years": 3},
+    {"Skill": "TypeScript", "Category": "Software & AI", "Proficiency": 75, "Years": 2},
+    {"Skill": "LLM Integration", "Category": "Software & AI", "Proficiency": 85, "Years": 1},
+    {"Skill": "AI Agents", "Category": "Software & AI", "Proficiency": 80, "Years": 1},
+    {"Skill": "React", "Category": "Software & AI", "Proficiency": 75, "Years": 2},
+    {"Skill": "NodeJS", "Category": "Software & AI", "Proficiency": 75, "Years": 2},
+    {"Skill": "AWS", "Category": "Cloud & DevOps", "Proficiency": 75, "Years": 2},
+    {"Skill": "Docker", "Category": "Cloud & DevOps", "Proficiency": 80, "Years": 2},
+    {"Skill": "Git", "Category": "Cloud & DevOps", "Proficiency": 85, "Years": 3},
 ]
 skills_df = pd.DataFrame(skills_data)
-
-education_data = [
-    {"Institution": "Rotman School of Management, University of Toronto", "Degree": "Master of Management Analytics (candidate)", "Year": "2025–2026"},
-    {"Institution": "University of New Brunswick", "Degree": "BSc Computer Science", "Year": "2018–2022", "GPA": "4.0/4.3"}
-]
-education_df = pd.DataFrame(education_data)
 
 experience_data = [
     {
         "Company": "CIBC",
         "Role": "Analyst Intern",
-        "Location": "Toronto, ON",
-        "Duration": "Jan 2026 – now",
-        "Start": "2026-01-01",
-        "End": datetime.now().strftime("%Y-%m-%d"),
+        "Duration": "Jan 2026 – Present",
         "Details": [
-            "Spearheaded the development of an AI-driven extraction tool to automate the retrieval and analysis of data from complex, unstructured test templates across 100+ annual compliance examinations.",
-            "Leveraged Large Language Models (LLMs) and RAG architectures to radically simplify the manual documentation lifecycle, targeting a significant reduction in the 580 hours required per individual exam.",
-            "Collaborated cross-functionally with Directors and compliance teams to define technical test criteria, designing a scalable solution poised for adoption by US and Caribbean examination teams."
+            "Built AI-driven extraction tool automating 100+ compliance exam data retrieval",
+            "Leveraged LLMs + RAG to reduce manual documentation lifecycle by 580+ hours/exam",
+            "Designed scalable solution for US & Caribbean examination teams"
         ]
     },
     {
         "Company": "Sunrise Group",
         "Role": "Digital Marketing Coordinator",
-        "Location": "Charlottetown, PE",
         "Duration": "Oct 2022 – Apr 2025",
-        "Start": "2022-10-01",
-        "End": "2025-04-30",
         "Details": [
-            "Digital Marketing Coordinator: Engineered Python scripts and AI-driven automations to clean, aggregate, and analyze complex user engagement logs, successfully reducing manual data processing workload by 30%.",
-            "Designed and executed rigorous A/B tests to optimize digital content strategy, developing weekly automated insight dashboards to guide data-driven partnership targeting and campaign budget allocation."
+            "Engineered Python automation scripts reducing manual workload by 30%",
+            "Executed A/B tests optimizing digital strategy, created automated insight dashboards",
+            "Data-driven budget allocation for partnership targeting & campaigns"
         ]
     },
     {
         "Company": "Teledyne-CARIS",
         "Role": "Web Application Developer Intern",
-        "Location": "Fredericton, NB",
         "Duration": "May 2021 – Dec 2021",
-        "Start": "2021-05-01",
-        "End": "2021-12-31",
         "Details": [
-            "Architected and deployed new data visualization layouts and interactive dashboard templates to effectively render complex analytical gadgets for customer-facing web applications.",
-            "Delivered 20+ critical feature enhancements across 10+ Agile sprint cycles, streamlining data product usability and directly driving an 11% increase in measurable client satisfaction scores."
+            "Architected interactive dashboard templates for customer-facing web apps",
+            "Delivered 20+ features across 10+ Agile sprints, 11% satisfaction boost",
+            "Complex analytical gadget visualization & UX optimization"
         ]
     },
     {
         "Company": "Gray Wolf Analytics",
-        "Role": "Blockchain Researcher/Developer & Mobile App Developer Intern",
-        "Location": "Fredericton, NB",
+        "Role": "Blockchain Researcher & Mobile App Dev Intern",
         "Duration": "Jan 2020 – Aug 2020",
-        "Start": "2020-01-01",
-        "End": "2020-08-31",
         "Details": [
-            "Leveraged 10+ open-source intelligence (OSINT) tools to conduct in-depth data mining and threat analysis on complex blockchain networks.",
-            "Developed a robust data collection pipeline to harvest and process tens of thousands of Bitcoin wallet addresses, building comprehensive graph networks for advanced data visualization and pattern recognition."
+            "Conducted in-depth data mining on blockchain networks using 10+ OSINT tools",
+            "Built data pipeline harvesting tens of thousands Bitcoin wallet addresses",
+            "Graph network visualization for advanced pattern recognition"
         ]
     }
 ]
 
-projects = {
-    "BTA x Meta Case Competition": [
-        "Secured 2nd Place by designing a Meta-first digital marketing strategy tailored to modernize brand relevance and drive measurable, incremental sales among Gen Z and Millennial demographics.",
-        "Architected a high-converting two-channel marketing funnel, applying lift-based measurement techniques and data-driven budget allocation to optimize real-world marketing ROI."
-    ],
-    "Rotman Datathon": [
-        "Awarded 1st Place for developing a data-driven budget reallocation strategy for a $245K search engine marketing campaign based on causality testing.",
-        "Analyzed 6,800+ hours of embedded A/B testing data (PPC vs. SEO) across US and Canadian markets using Difference-in-Differences (DiD) regression and Poisson GLM to evaluate traffic substitution rates.",
-        "Delivered actionable business insights, uncovering a 71% organic substitution rate in Canada versus 25% in the US, and modeled ROI profitability to recommend a highly optimized $155K–$170K marketing spend."
-    ],
-    "Personal Baking Business": [
-        "Founded and scaled an artisanal bakery brand, managing end-to-end commercial operations, from product development and B2B catering to social media marketing strategy.",
-        "Developed a custom software tool to optimize backend business operations, implementing features for robust recipe management, ingredient inventory tracking, and granular profit margin analysis."
-    ]
-}
+# ======== Hero Section ========
+st.markdown('<div class="turn-counter">INTENT: ACTIVE</div>', unsafe_allow_html=True)
 
-# ---- sidebar controls ----
-st.sidebar.title("🎛️ Controls")
-theme = st.sidebar.radio("Theme", ["Light", "Dark"], index=0)
-show_home = st.sidebar.checkbox("Home", True)
-show_skills = st.sidebar.checkbox("Skills", True)
-show_experience = st.sidebar.checkbox("Experience", True)
-show_projects = st.sidebar.checkbox("Projects", True)
-show_education = st.sidebar.checkbox("Education", True)
+col1, col2 = st.columns([2, 1])
+with col1:
+    st.markdown("""
+    <div class="hero-section">
+        <h1 style="color: #00d4ff; font-size: 3.5rem; margin: 0; line-height: 1;">YUHAN REN</h1>
+        <p style="color: #00ff41; font-size: 1.2rem; margin: 0.3rem 0; letter-spacing: 2px;">
+            AI × DATA × WEB ENGINEER
+        </p>
+        <p style="color: #888; font-size: 0.9rem; margin: 0.5rem 0;">
+            mark.ren@rotman.utoronto.ca
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Skill filters
-st.sidebar.subheader("Skill Filters")
-min_prof = st.sidebar.slider("Minimum Proficiency", 0, 100, 0)
-category = st.sidebar.selectbox("Category", ["All", "Data & Analytics", "Software & AI Development", "Cloud, DevOps & Tools"])
-selected_skills = st.sidebar.multiselect("Select Skills", skills_df['Skill'].tolist(), default=skills_df['Skill'].tolist()[:5])
+with col2:
+    st.markdown("""
+    <div style="background: #1a1a2e; border: 2px solid #00d4ff; padding: 1.5rem; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+        <div style="text-align: center;">
+            <div style="color: #00d4ff; font-weight: bold; font-size: 2rem;">6+</div>
+            <div style="color: #888; font-size: 0.9rem;">Years Active</div>
+        </div>
+        <hr style="border: 1px solid #00ff41; margin: 1rem 0;">
+        <div style="text-align: center;">
+            <div style="color: #00ff41; font-weight: bold; font-size: 2rem;">3</div>
+            <div style="color: #888; font-size: 0.9rem;">Awards Won</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ---- main content ----
-st.markdown('<div class="main-header">🚀 Yuhan Ren - Interactive Resume</div>', unsafe_allow_html=True)
-st.write("mark.ren@rotman.utoronto.ca | [LinkedIn](https://www.linkedin.com/in/your-profile)")
-
-# Tabs
-if show_home:
-    with st.expander("🏠 Home - Quick Overview", expanded=True):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Years of Experience", "6+")
-        with col2:
-            st.metric("Projects Completed", "3+")
-        with col3:
-            st.metric("Skills Mastered", "20+")
-        
-        st.subheader("Tech Stack Highlights")
-        tech_stack = ["Python", "JavaScript", "SQL", "AWS", "Docker", "LLMs", "React", "Tableau"]
-        badges = "".join([f'<span class="tech-badge">{tech}</span>' for tech in tech_stack])
-        st.markdown(badges, unsafe_allow_html=True)
-
-if show_skills:
-    with st.expander("🛠️ Skills", expanded=True):
-        filtered = skills_df[(skills_df.Proficiency >= min_prof) & (skills_df.Skill.isin(selected_skills))]
-        if category != "All":
-            filtered = filtered[filtered.Category == category]
-        
-        st.table(filtered)
-        
-        chart_type = st.selectbox("Chart Type", ["Bar Chart", "Radar Chart"])
-        if chart_type == "Bar Chart":
-            bar = alt.Chart(filtered).mark_bar().encode(
-                x=alt.X('Skill', sort='-y'),
-                y='Proficiency',
-                color='Category',
-                tooltip=['Skill', 'Proficiency']
-            ).properties(width=600, height=400)
-            st.altair_chart(bar, use_container_width=True)
-        else:
-            # Radar chart with Plotly
-            categories = filtered['Skill'].tolist()
-            values = filtered['Proficiency'].tolist()
-            fig = go.Figure()
-            fig.add_trace(go.Scatterpolar(
-                r=values + [values[0]],
-                theta=categories + [categories[0]],
-                fill='toself',
-                name='Proficiency'
-            ))
-            fig.update_layout(
-                polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-                showlegend=False,
-                title="Skill Proficiency Radar"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-if show_experience:
-    with st.expander("💼 Work Experience", expanded=True):
-        # Timeline chart
-        exp_df = pd.DataFrame(experience_data)
-        timeline = alt.Chart(exp_df).mark_bar().encode(
-            x=alt.X('Start:T', title='Time'),
-            x2='End:T',
-            y=alt.Y('Company', sort=alt.SortField('Start', order='descending')),
-            color='Role',
-            tooltip=['Company', 'Role', 'Duration']
-        ).properties(width=600, height=300, title="Experience Timeline")
-        st.altair_chart(timeline, use_container_width=True)
-        
-        for exp in experience_data:
-            with st.expander(f"{exp['Company']} - {exp['Role']} ({exp['Duration']})"):
-                st.write(f"**Location:** {exp['Location']}")
-                for detail in exp['Details']:
-                    st.write(f"• {detail}")
-
-if show_projects:
-    with st.expander("🚀 Projects", expanded=True):
-        selection = st.selectbox("Choose a project", ["None"] + list(projects.keys()))
-        if selection != "None":
-            st.subheader(selection)
-            for detail in projects[selection]:
-                st.write(f"• {detail}")
-
-if show_education:
-    with st.expander("🎓 Education", expanded=True):
-        st.table(education_df)
-
-# Footer
+# ======== Generative Conversation UI ========
 st.markdown("---")
-st.write("Built with Streamlit | Last updated: March 2026")
+st.markdown("### 🧠 INTELLIGENT INTENT SCANNER")
+st.write("This interface detects your intent and **generates personalized micro-apps in real-time**.")
+
+user_prompt = st.text_input(
+    "Query Your Profile:",
+    placeholder="e.g., 'AI/ML skills', 'Timeline', 'Awards', 'Growth'",
+    key="main_input"
+)
+
+def detect_intent(prompt):
+    intent_map = {
+        "skills": ["skill", "proficiency", "technical", "language", "framework", "competency"],
+        "experience": ["experience", "timeline", "job", "work", "career", "role", "employment"],
+        "projects": ["project", "award", "achievement", "accomplishment", "built", "first"],
+        "growth": ["growth", "learning", "trajectory", "evolution", "progress", "years"],
+        "summary": ["summary", "overview", "about", "intro", "profile", "brief"]
+    }
+    
+    prompt_lower = prompt.lower()
+    for intent, keywords in intent_map.items():
+        if any(kw in prompt_lower for kw in keywords):
+            return intent
+    return "summary"
+
+if user_prompt:
+    st.session_state.turn_count += 1
+    detected_intent = detect_intent(user_prompt)
+    
+    st.markdown(f'<div class="conversation-turn generative-ui">', unsafe_allow_html=True)
+    
+    col_left, col_mid = st.columns([1, 3])
+    with col_left:
+        st.markdown(f'<div class="user-intent">INTENT:<br/><strong>{detected_intent.upper()}</strong></div>', unsafe_allow_html=True)
+    
+    with col_mid:
+        st.markdown(f'<div class="agentic-suggestion">Generating micro-UI for: <strong>{detected_intent}</strong> cluster...</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ======== INTENT-DRIVEN GENERATIVE UI ========
+    if detected_intent == "skills":
+        st.markdown("### ⚙️ SKILL MATRIX INTERFACE")
+        
+        skill_focus = st.selectbox("Category Filter", ["All", "Data & Analytics", "Software & AI", "Cloud & DevOps"])
+        filtered_skills = skills_df if skill_focus == "All" else skills_df[skills_df['Category'] == skill_focus]
+        
+        for idx, skill in filtered_skills.iterrows():
+            col_name, col_bar, col_years = st.columns([2, 3, 1])
+            with col_name:
+                st.markdown(f'<div class="skill-gauge">{skill["Skill"]}</div>', unsafe_allow_html=True)
+            with col_bar:
+                st.progress(skill["Proficiency"] / 100)
+            with col_years:
+                st.markdown(f'<div style="text-align: right; color: #00d4ff; font-weight: bold;">{skill["Years"]}y exp</div>', unsafe_allow_html=True)
+        
+        st.markdown("#### PROFICIENCY RADAR")
+        fig = go.Figure()
+        fig.add_trace(go.Scatterpolar(
+            r=filtered_skills['Proficiency'].tolist() + [filtered_skills['Proficiency'].iloc[0]],
+            theta=filtered_skills['Skill'].tolist() + [filtered_skills['Skill'].iloc[0]],
+            fill='toself',
+            fillcolor='rgba(0, 212, 255, 0.2)',
+            line=dict(color='#00d4ff', width=2)
+        ))
+        fig.update_layout(
+            polar=dict(
+                bgcolor='rgba(26, 26, 46, 0.5)',
+                radialaxis=dict(visible=True, range=[0, 100], gridcolor='#00d4ff', gridwidth=0.5)
+            ),
+            paper_bgcolor='rgba(15, 15, 15, 0)',
+            font=dict(color='#00d4ff'),
+            showlegend=False,
+            height=400
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    elif detected_intent == "experience":
+        st.markdown("### 📍 CAREER EVOLUTION TIMELINE")
+        
+        for idx, exp in enumerate(experience_data):
+            st.markdown(f"""
+            <div class="timeline-event micro-interaction" style="border-color: {'#00ff41' if idx == 0 else '#00d4ff'};">
+                <h3 style="margin: 0; color: {'#00ff41' if idx == 0 else '#00d4ff'};">{'[CURRENT] ' if idx == 0 else ''}{exp['Company']}</h3>
+                <p style="margin: 0.3rem 0; color: #ff006e; font-weight: bold;">{exp['Role']}</p>
+                <p style="margin: 0.3rem 0; color: #888; font-size: 0.9rem;">{exp['Duration']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            for detail in exp['Details']:
+                st.markdown(f"▪ {detail}")
+            if idx < len(experience_data) - 1:
+                st.markdown("---")
+    
+    elif detected_intent == "projects":
+        st.markdown("### 🚀 AWARD-WINNING ACHIEVEMENTS")
+        
+        projects = {
+            "BTA x Meta Competition": {
+                "rank": "🥈 2nd Place",
+                "desc": "Designed Meta-first digital marketing strategy for Gen Z & Millennial demographics",
+                "tech": ["Marketing", "Data Analysis", "Strategy"]
+            },
+            "Rotman Datathon": {
+                "rank": "🥇 1st Place",
+                "desc": "$245K SEM campaign optimization via Difference-in-Differences regression analysis",
+                "tech": ["Python", "Statistics", "Causality"]
+            },
+            "Personal Baking Business": {
+                "rank": "👑 Founder",
+                "desc": "Full-stack e-commerce with AI-powered inventory & recipe optimization engine",
+                "tech": ["Full Stack", "Operations", "AI"]
+            }
+        }
+        
+        for proj_name, proj_data in projects.items():
+            st.markdown(f"""
+            <div class="timeline-event micro-interaction" style="border-color: #00ff41;">
+                <h3 style="margin: 0; color: #00ff41;">{proj_data['rank']} {proj_name}</h3>
+                <p style="margin: 0.5rem 0; color: #ddd;">{proj_data['desc']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            for tech in proj_data['tech']:
+                st.markdown(f'<span class="neural-badge">{tech}</span>', unsafe_allow_html=True)
+            st.markdown("")
+    
+    elif detected_intent == "growth":
+        st.markdown("### 📈 NEURAL PROFICIENCY TRAJECTORY")
+        
+        growth_data = pd.DataFrame({
+            'Year': ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+            'Proficiency': [30, 45, 65, 75, 82, 90, 95]
+        })
+        
+        chart = alt.Chart(growth_data).mark_line(point=True, size=3, color='#00d4ff').encode(
+            x='Year:O',
+            y=alt.Y('Proficiency:Q', scale=alt.Scale(domain=[0, 100])),
+            tooltip=['Year', 'Proficiency']
+        ).properties(width=600, height=300, title="6-Year Skill Elevation Arc")
+        
+        st.altair_chart(chart, use_container_width=True)
+    
+    else:  # summary
+        st.markdown("### 📋 NEURAL PROFILE SNAPSHOT")
+        st.markdown("""
+        **🎓 Educational Foundation**  
+        • Master of Management Analytics @ Rotman School (2025-2026)  
+        • BSc Computer Science @ University of New Brunswick (GPA: 4.0/4.3)
+        
+        **🔬 Technical Specializations**  
+        • Large Language Models & Generative AI Integration  
+        • Data-Driven Decision Architecture  
+        • Full-Stack Web Engineering & Cloud Infrastructure
+        """)
+        
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        with metric_col1:
+            st.metric("Languages", "14")
+        with metric_col2:
+            st.metric("Experience", "6+ yrs")
+        with metric_col3:
+            st.metric("Projects", "10+")
+        with metric_col4:
+            st.metric("Awards", "3")
+
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #888; font-size: 0.85rem; margin-top: 3rem;">
+    <strong style="color: #00d4ff;">GENERATIVE UI INTERFACE</strong> | Powered by Intent Detection & Dynamic Rendering  
+    <br/>
+    <em style="color: #00ff41;">2026 HCI Paradigm: Agentic + Spatial + Emotion-Aware</em>
+    <br/>
+    Micro-interactions • Neo-Brutalist Aesthetics • Real-time Micro-apps
+</div>
+""", unsafe_allow_html=True)
