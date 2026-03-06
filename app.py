@@ -59,6 +59,7 @@ st.markdown("""
         margin: 1rem 0;
         transform: skewX(-2deg);
         position: relative;
+        color: #f0f0f0;
     }
     
     .user-intent {
@@ -90,6 +91,7 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 2px;
         font-size: 0.8rem;
+        color: #f0f0f0;
     }
     
     .timeline-event {
@@ -98,6 +100,7 @@ st.markdown("""
         margin: 1.5rem 0;
         background: rgba(0, 212, 255, 0.05);
         position: relative;
+        color: #f0f0f0;
     }
     
     .timeline-event::after {
@@ -119,6 +122,7 @@ st.markdown("""
         padding: 1rem;
         margin: 1rem 0;
         position: relative;
+        color: #f0f0f0;
     }
     
     .agentic-suggestion::before {
